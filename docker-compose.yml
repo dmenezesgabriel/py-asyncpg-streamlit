@@ -1,0 +1,35 @@
+version: "3"
+services:
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      - db
+    environment:
+      ENVIRONMENT: development
+      POSTGRES_USER: postgres # Replace with your PostgreSQL username
+      POSTGRES_PASSWORD: postgres # Replace with your PostgreSQL password
+      POSTGRES_DB: postgres # Replace with your PostgreSQL database name
+    networks:
+      - streamlit_net
+    volumes:
+      - .:/app
+
+  db:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: postgres # Replace with your PostgreSQL username
+      POSTGRES_PASSWORD: postgres # Replace with your PostgreSQL password
+      POSTGRES_DB: postgres # Replace with your PostgreSQL database name
+    ports:
+      - "5432:5432"
+    networks:
+      - streamlit_net
+
+networks:
+  streamlit_net:
+    driver: bridge
