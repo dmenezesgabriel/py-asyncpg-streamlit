@@ -214,5 +214,8 @@ async def main():
 
 
 if __name__ == "__main__":
-
-    asyncio.run(main())
+    if "loop" not in st.session_state:
+        st.session_state["loop"] = asyncio.new_event_loop()
+    loop = st.session_state["loop"]
+    loop.run_until_complete(main())
+    # asyncio.run(main())

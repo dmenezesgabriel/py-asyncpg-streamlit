@@ -21,6 +21,7 @@ class DatabaseSessionMixin:
         database_uri = orm_module.get_database_uri()
         # multiple create engine
         orm = orm_module.get_orm(base_orm=BaseOrm(database_uri=database_uri))
+        self.orm = orm
         self.session = orm.session
         return self.session
 
@@ -34,6 +35,7 @@ class DatabaseSessionMixin:
             raise Exception(error)
         finally:
             await self.session.close()
+            # self.orm.engine.dispose()
 
 
 def use_database_session() -> DatabaseSessionMixin:

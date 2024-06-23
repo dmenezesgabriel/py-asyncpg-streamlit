@@ -11,9 +11,6 @@ from sqlalchemy.pool import AsyncAdaptedQueuePool, NullPool
 from src.config import get_config
 from src.utils.singleton import SingletonHash
 
-# 1. remove metaclass=SingletonHash
-# 2. poolclass=NullPool
-
 config = get_config()
 logger = logging.getLogger("app")
 
