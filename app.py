@@ -6,8 +6,7 @@ from uuid import uuid4
 
 import pandas as pd
 import streamlit as st
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.future import select
+from sqlalchemy import Column, Integer, String, select
 from sqlalchemy.orm import declarative_base
 
 from src.config import get_config
@@ -30,27 +29,27 @@ class Todo(Base):
 
 
 async def get_todos():
-    async with use_database_session() as session:
-        result = await session.scalars(select(Todo))
+    with use_database_session() as session:
+        result = session.scalars(select(Todo))
         todos = result.all()
     return todos
 
 
 async def get_todo(id: str):
-    async with use_database_session() as session:
-        result = await session.scalars(select(Todo).filter(Todo.id == id))
-        todo = result.first()
+    with use_database_session() as session:
+        result = session.execute(select(Todo).filter(Todo.id == id))
+        todo = result.scalars().first()
     return todo
 
 
 async def create_todo(title: str):
     todo_id = str(uuid4())
     try:
-        async with use_database_session() as session:
-            async with session.begin():
+        with use_database_session() as session:
+            with session.begin():
                 todo = Todo(id=todo_id, title=title)
                 session.add(todo)
-        await session.commit()
+        session.commit()
         return todo
     except Exception as e:
         logger.error(f"Error creating todo: {e}")
@@ -58,22 +57,22 @@ async def create_todo(title: str):
 
 
 async def update_todo(id: str, title: str, completed: int):
-    async with use_database_session() as session:
-        result = await session.scalars(select((Todo)).filter(Todo.id == id))
-        todo = result.first()
+    with use_database_session() as session:
+        result = session.execute(select((Todo)).filter(Todo.id == id))
+        todo = result.scalars().first()
         if todo:
             todo.title = cast(Column["str"], title)
             todo.completed = cast(Column["int"], completed)
-            await session.commit()
+            session.commit()
 
 
 async def delete_todo(id: str):
-    async with use_database_session() as session:
-        result = await session.scalars(select((Todo)).filter(Todo.id == id))
-        todo = result.first()
+    with use_database_session() as session:
+        result = session.execute(select((Todo)).filter(Todo.id == id))
+        todo = result.scalars().first()
         if todo:
-            await session.delete(todo)
-            await session.commit()
+            session.delete(todo)
+            session.commit()
 
 
 async def get_data():
@@ -102,9 +101,9 @@ async def create_tables(skip=True):
     database_uri = orm_module.get_database_uri()
     orm = orm_module.get_orm(base_orm=BaseOrm(database_uri=database_uri))
 
-    async with orm.engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+    with orm.engine.begin() as conn:
+        Base.metadata.drop_all(bind=orm.engine)
+        Base.metadata.create_all(bind=orm.engine)
 
 
 async def main():
@@ -143,7 +142,12 @@ async def main():
                 with st.form("Add TODO", border=False):
                     title = st.text_input("Title")
                     if st.form_submit_button("Submit"):
-                        await create_todo(title)
+                        try:
+                            await create_todo(title)
+                            logger.info(f"Created todo successfully: {title}")
+                        except Exception as error:
+                            logger.error(error)
+
                         st.rerun()
 
     if not len(data):
@@ -214,8 +218,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    if "loop" not in st.session_state:
-        st.session_state["loop"] = asyncio.new_event_loop()
-    loop = st.session_state["loop"]
-    loop.run_until_complete(main())
-    # asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as error:
+        logger.error(error)
