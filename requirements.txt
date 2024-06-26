@@ -1,6 +1,5 @@
 streamlit==1.*
 SQLAlchemy==2.*
 pandas==2.*
-asyncpg
-aiosqlite
+psycopg2-binary
 

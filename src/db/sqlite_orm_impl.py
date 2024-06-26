@@ -3,4 +3,4 @@ class SQLiteOrmImpl:
         return base_orm
 
     def get_database_uri(self) -> str:
-        return "sqlite+aiosqlite:///./database.db"
+        return "sqlite:///./database.db"
